@@ -1,9 +1,10 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <chrono>
-#include <queue>
 #include <vector>
+#include <queue>
 #include <stack>
+
 
 using namespace std;
 
@@ -18,10 +19,8 @@ protected:
 	bool bfs(vector<vector<int> >& rGraph, int source, int target, vector<int>& parent)
 	{
 		// BFS - поиск возможного минимального пути в сети
-		queue<int> q;
-		/*bool* visited = new bool[vertex];
-		for (int i = 0; i < vertex; i++) visited[i] = false;*/
 		vector<bool> visited(vertex, false);
+		queue<int> q;
 
 		q.push(source);
 		visited[source] = true;
@@ -39,7 +38,6 @@ protected:
 					if (v == target)
 					{
 						parent[v] = u;
-						//delete[] visited;
 						return true;
 					}
 					q.push(v);
@@ -48,15 +46,13 @@ protected:
 				}
 			}
 		}
-		//delete[] visited;
+
 		return false;
 	}
 
 	bool dfs(vector<vector<int> >& rGraph, int source, int target, vector<int>& parent)
 	{
 		// DFS; вместо очереди используется стек
-		/*bool* visited = new bool[vertex];
-		for (int i = 0; i < vertex; i++) visited[i] = false;*/
 		vector<bool> visited(vertex, false);
 
 		stack<int> S;
@@ -81,7 +77,6 @@ protected:
 			}
 		}
 		bool res = visited[target];
-		//delete[] visited;
 		return res;
 	}
 
@@ -90,7 +85,6 @@ protected:
 		// BFS + создание слоистой вспомогательной сети
 		queue<int> q;
 		q.push(source);
-		//for (int i = 0; i < vertex; i++) level[i] = -1; // это точно assign ????
 		level.assign(vertex, -1);
 		level[source] = 0;
 
@@ -134,15 +128,9 @@ protected:
 public:
 	Graph()
 	{
-		// Базовый конструктор; выделение дин.памяти
+		// Базовый конструктор
 		vertex = 5;
-		/*adjMatrix = new int* [vertex];
-		for (int i = 0; i < vertex; i++)
-		{
-			adjMatrix[i] = new int[vertex];
-			for (int j = 0; j < vertex; j++)
-				adjMatrix[i][j] = 0;
-		}*/
+
 		adjMatrix.resize(vertex, vector<int>(vertex, 0));
 	}
 
@@ -150,13 +138,7 @@ public:
 	{
 		// Конструктор, принимающий количество вершин
 		vertex = V;
-		/*adjMatrix = new int* [vertex];
-		for (int i = 0; i < vertex; i++)
-		{
-			adjMatrix[i] = new int[vertex];
-			for (int j = 0; j < vertex; j++)
-				adjMatrix[i][j] = 0;
-		}*/
+
 		adjMatrix.resize(vertex, vector<int>(vertex, 0));
 	}
 
@@ -164,28 +146,12 @@ public:
 	{
 		// Конструктор копий
 		vertex = G.vertex;
-		/*adjMatrix = new int*[vertex];
-		for (int i = 0; i < vertex; i++)
-		{
-			adjMatrix[i] = new int[vertex];
-			for (int j = 0; j < vertex; j++)
-				adjMatrix[i][j] = G.adjMatrix[i][j];
-		}*/
+
 		adjMatrix.resize(vertex, vector<int>(vertex, 0));
 		for (int u = 0; u < vertex; u++)
 			for (int v = 0; v < vertex; v++)
 				adjMatrix[u][v] = G.adjMatrix[u][v];
 	}
-
-	~Graph()
-	{
-		// Деструктор; освобождение памяти
-		/*for (int i = 0; i < vertex; i++)
-			delete[] adjMatrix[i];
-		delete[] adjMatrix;
-		adjMatrix = NULL;*/
-	}
-
 
 	void addEdge(int a, int b, int weight)
 	{
@@ -195,13 +161,6 @@ public:
 	int fordFulkerson(int source, int target)
 	{
 		// Алгоритм Форда-Фалкерсона
-		/*int** rGraph = new int* [vertex];
-		for (int u = 0; u < vertex; u++)
-		{
-			rGraph[u] = new int[vertex];
-			for (int v = 0; v < vertex; v++)
-				rGraph[u][v] = adjMatrix[u][v];
-		}*/
 		vector<vector<int> > rGraph(vertex, vector<int>(vertex, 0));
 		for (int u = 0; u < vertex; u++)
 			for (int v = 0; v < vertex; v++)
@@ -209,17 +168,19 @@ public:
 
 		vector<int> parent(vertex, 0);
 
-		//int* parent = new int[vertex];
 		int maxFlow = 0;
 
-		while (dfs(rGraph, source, target, parent)) {
+		while (dfs(rGraph, source, target, parent))
+		{
 			int pathFlow = INT_MAX;
-			for (int v = target; v != source; v = parent[v]) {
+			for (int v = target; v != source; v = parent[v])
+			{
 				int u = parent[v];
 				pathFlow = min(pathFlow, rGraph[u][v]);
 			}
 
-			for (int v = target; v != source; v = parent[v]) {
+			for (int v = target; v != source; v = parent[v])
+			{
 				int u = parent[v];
 				rGraph[u][v] -= pathFlow;
 				rGraph[v][u] += pathFlow;
@@ -227,12 +188,6 @@ public:
 
 			maxFlow += pathFlow;
 		}
-
-		/*for (int i = 0; i < vertex; i++)
-			delete[] rGraph[i];
-		delete[] rGraph;
-
-		delete[] parent;*/
 
 		return maxFlow;
 	}
@@ -240,30 +195,25 @@ public:
 	int edmondsKarp(int source, int target)
 	{
 		// Алгоритм Эдмондса-Карпа
-		/*int** rGraph = new int* [vertex];
-		for (int u = 0; u < vertex; u++)
-		{
-			rGraph[u] = new int[vertex];
-			for (int v = 0; v < vertex; v++)
-				rGraph[u][v] = adjMatrix[u][v];
-		}*/
 		vector<vector<int> > rGraph(vertex, vector<int>(vertex, 0));
 		for (int u = 0; u < vertex; u++)
 			for (int v = 0; v < vertex; v++)
 				rGraph[u][v] = adjMatrix[u][v];
 
-		//int* parent = new int[vertex];
 		vector<int> parent(vertex, 0);
 		int maxFlow = 0;
 
-		while (bfs(rGraph, source, target, parent)) {
+		while (bfs(rGraph, source, target, parent))
+		{
 			int pathFlow = INT_MAX;
-			for (int v = target; v != source; v = parent[v]) {
+			for (int v = target; v != source; v = parent[v])
+			{
 				int u = parent[v];
 				pathFlow = min(pathFlow, rGraph[u][v]);
 			}
 
-			for (int v = target; v != source; v = parent[v]) {
+			for (int v = target; v != source; v = parent[v])
+			{
 				int u = parent[v];
 				rGraph[u][v] -= pathFlow;
 				rGraph[v][u] += pathFlow;
@@ -272,53 +222,27 @@ public:
 			maxFlow += pathFlow;
 		}
 
-		/*for (int i = 0; i < vertex; i++)
-			delete[] rGraph[i];
-		delete[] rGraph;
-
-		delete[] parent;*/
-
 		return maxFlow;
 	}
 
 	int dinic(int source, int target)
 	{
 		// Алгоритм Диница
-		int maxFlow = 0;
-		vector<int> level(vertex, -1);
-		//int* level = new int[vertex];
-		//for (int i = 0; i < vertex; i++) level[i] = -1;
-
-		/*int** rGraph = new int* [vertex];
-		for (int u = 0; u < vertex; u++)
-		{
-			rGraph[u] = new int[vertex];
-			for (int v = 0; v < vertex; v++)
-				rGraph[u][v] = adjMatrix[u][v];
-		}*/
-
 		vector<vector<int> > rGraph(vertex, vector<int>(vertex, 0));
 		for (int u = 0; u < vertex; u++)
 			for (int v = 0; v < vertex; v++)
 				rGraph[u][v] = adjMatrix[u][v];
 
+		int maxFlow = 0;
+		vector<int> level(vertex, -1);
+
 		while (bfsForDinic(rGraph, source, target, level))
 		{
 			vector<int> start(vertex, 0);
-			//int* start = new int[vertex];
-			for (int i = 0; i < vertex; i++) start[i] = 0;
 
 			while (int flow = dfsForDinic(rGraph, source, target, INT_MAX, level, start))
 				maxFlow += flow;
-
-			//delete[] start;
 		}
-
-		/*for (int i = 0; i < vertex; i++)
-			delete[] rGraph[i];
-		delete[] rGraph;
-
-		delete[] level;*/
 
 		return maxFlow;
 	}
@@ -349,14 +273,7 @@ istream& operator>>(istream& stream, Graph& G)
 
 		if (vertex != G.vertex)
 		{
-			/*for (int i = 0; i < G.vertex; i++)
-				delete[] G.adjMatrix[i];
-			delete[] G.adjMatrix;
-
 			G.vertex = vertex;
-			G.adjMatrix = new int* [vertex];
-			for (int j = 0; j < vertex; j++)
-				G.adjMatrix[j] = new int[vertex];*/
 			G.adjMatrix.resize(vertex, vector<int>(vertex, 0));
 		}
 	}
@@ -372,29 +289,6 @@ istream& operator>>(istream& stream, Graph& G)
 int main()
 {
 	/*
-	Graph G(6);
-	G.addEdge(0, 1, 16);
-	G.addEdge(0, 2, 13);
-	G.addEdge(1, 2, 10);
-	G.addEdge(1, 3, 12);
-	G.addEdge(2, 1, 4);
-	G.addEdge(2, 4, 14);
-	G.addEdge(3, 2, 9);
-	G.addEdge(3, 5, 20);
-	G.addEdge(4, 3, 7);
-	G.addEdge(4, 5, 4);
-	*/
-
-	/*
-	Graph G(4);
-	G.addEdge(0, 1, 1000);
-	G.addEdge(0, 2, 1000);
-	G.addEdge(1, 2, 1);
-	G.addEdge(1, 3, 1000);
-	G.addEdge(2, 3, 1000);
-	*/
-
-	/*
 	Graph G(10);
 	ifstream fin; fin.open("test0.txt");
 	if (fin)
@@ -405,7 +299,7 @@ int main()
 	*/
 
 	/*
-	Graph G(7);
+	Graph G(4);
 	ifstream fin; fin.open("test1.txt");
 	if (fin)
 	{
@@ -415,7 +309,7 @@ int main()
 	*/
 
 	/*
-	Graph G(4);
+	Graph G(6);
 	ifstream fin; fin.open("test2.txt");
 	if (fin)
 	{
@@ -423,10 +317,16 @@ int main()
 		fin.close();
 	}
 	*/
-	Graph G(15);
+
+	Graph G(11);
+	ifstream fin; fin.open("testx.txt");
+	if (fin)
+	{
+		fin >> G;
+		fin.close();
+	}
 
 	cout << G << endl;
-
 
 	long int timer_1, timer_2;
 	long int ff_total = 0, ek_total = 0, d_total = 0;
@@ -434,7 +334,7 @@ int main()
 	
 	// Важно указать исток и сток
 	int source = 0;
-	int target = 4;
+	int target = 10;
 
 	// Измерение алгоритма Форда-Фалкерсона
 	int ff_flow;
