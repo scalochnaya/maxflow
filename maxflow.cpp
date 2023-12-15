@@ -64,12 +64,18 @@ protected:
 	vector<int> adjList;		// Список смежности для вершины
 	int vertices = 0;			// Количество вершин
 
+	void initializeVector(vector<int>& list, int v)
+	{
+		// Инициализация вершины
+		vertices = v;
+		list.resize(vertices, 0);
+	}
+
 public:
 	Vertex()
 	{
 		// Базовый конструктор
-		vertices = DEFAULT_VERTICES;
-		adjList.resize(vertices, 0);
+		initializeVector(adjList, DEFAULT_VERTICES);
 	}
 
 	Vertex(int V)
@@ -77,15 +83,13 @@ public:
 		// Конструктор, принимающий количество вершин
 		if (V <= 0)
 			throw InvalidVertexException(V);
-		vertices = V;
-		adjList.resize(vertices, 0);
+		initializeVector(adjList, V);
 	}
 
 	Vertex(const Vertex& ver)
 	{
 		// Конструктор копий
-		vertices = ver.vertices;
-		adjList.resize(vertices, 0);
+		initializeVector(adjList, ver.vertices);
 		for (int i = 0; i < vertices; i++)
 			adjList[i] = ver.adjList[i];
 	}
@@ -116,6 +120,15 @@ public:
 		for (int i = 0; i < vertices; i++)
 			cout << adjList[i] << " ";
 		cout << endl;
+	}
+
+	friend ostream& operator<<(ostream& stream, Vertex& V)
+	{
+		for (int i = 0; i < V.vertices; i++)
+			stream << V.adjList[i] << " ";
+		stream << endl;
+
+		return stream;
 	}
 };
 
@@ -149,6 +162,7 @@ public:
 
 	Vertex& operator[](int index)
 	{
+		// Переопределение оператора []
 		if (index >= vertices)
 			throw IndexOutOfBoundsException(vertices, index);
 		return adjMatrix[index];
@@ -157,10 +171,11 @@ public:
 
 	friend ostream& operator<<(ostream& stream, Graph& G)
 	{
+		// Вывод в файл/консоль
 		stream << G.vertices << endl;
 		for (int i = 0; i < G.vertices; i++)
 		{
-			G[i].printVertex();
+			stream << G[i];
 		}
 
 		return stream;
@@ -168,6 +183,7 @@ public:
 
 	friend istream& operator>>(istream& stream, Graph& G)
 	{
+		// Вывод из файла/консоли
 		if (typeid(stream) == typeid(ifstream))
 		{
 			int vertex;
@@ -175,8 +191,7 @@ public:
 
 			if (vertex != G.vertices)
 			{
-				G.vertices = vertex;
-				G.adjMatrix.resize(vertex, Vertex());
+				G.initialize(G.adjMatrix, vertex);
 			}
 		}
 		for (int i = 0; i < G.vertices; i++)
@@ -389,11 +404,15 @@ protected:
 		return maxFlow;
 	}
 public:
+	// Наследование конструкторов из класса родителя Graph
 	FlowGraph() : Graph() {}
 	FlowGraph(int V) : Graph(V) {}
 
 	int findMaxFlow(int source, int target, int algo)
 	{
+		// Функция, которая передает управление тому или иному алгоритму
+		// в зависимости от параметра algo
+
 		if (algo == 1)
 		{
 			return fordFulkerson(source, target);
@@ -420,7 +439,7 @@ int main()
 	try
 	{
 		/*
-		Graph G(10);
+		FlowGraph G(10);
 		ifstream fin; fin.open("test0.txt");
 		if (fin)
 		{
@@ -430,7 +449,7 @@ int main()
 		*/
 
 		/*
-		Graph G(4);
+		FlowGraph G(4);
 		ifstream fin; fin.open("test1.txt");
 		if (fin)
 		{
@@ -439,15 +458,15 @@ int main()
 		}
 		*/
 
-		/*
-		Graph G(6);
+		
+		/*FlowGraph G(6);
 		ifstream fin; fin.open("test2.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
-		}
-		*/
+		}*/
+		
 
 		FlowGraph G(11);
 		ifstream fin; fin.open("testx.txt");
