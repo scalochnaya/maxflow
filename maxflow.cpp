@@ -5,21 +5,197 @@
 #include <queue>
 #include <stack>
 
-
 using namespace std;
 
+#define DEFAULT_VERTICES 10
 
-class Graph
+class InvalidVertexException : public exception	// Исключение: Неверное кол-во вершин
 {
 protected:
-	vector<vector<int> > adjMatrix; // матрица смежности
-	int vertex = 0;  // кол-во вершин
+	int invalidVertex;
+public:
+	InvalidVertexException(int i)
+	{
+		invalidVertex = i;
+	}
+
+	void print()
+	{
+		cout << "InvalidVertexException: Graph can't have " << invalidVertex << " vertices\n";
+	}
+};
+
+class IndexOutOfBoundsException : public exception	// Исключение: Выход за границы
+{
+protected:
+	int realVertices;
+	int invalidVertex;
+public:
+	IndexOutOfBoundsException(int v, int i)
+	{
+		realVertices = v;
+		invalidVertex = i;
+	}
+	void print()
+	{
+		cout << "IndexOutOfBoundsException: Graph has " << realVertices << ", not " << invalidVertex << endl;
+	}
+};
+
+class InvalidAlgorithmException : public exception	// Исключение: Неверно указанный алгоритм
+{
+protected:
+	int invalidAlgorithm;
+public:
+	InvalidAlgorithmException(int i)
+	{
+		invalidAlgorithm = i;
+	}
+	void print()
+	{
+		cout << "InvalidAlgorithmException: There is no algorithm with number " << invalidAlgorithm << endl;
+	}
+};
 
 
-	bool bfs(vector<vector<int> >& rGraph, int source, int target, vector<int>& parent)
+class Vertex					// Класс вершины
+{
+protected:
+	vector<int> adjList;		// Список смежности для вершины
+	int vertices = 0;			// Количество вершин
+
+public:
+	Vertex()
+	{
+		// Базовый конструктор
+		vertices = DEFAULT_VERTICES;
+		adjList.resize(vertices, 0);
+	}
+
+	Vertex(int V)
+	{
+		// Конструктор, принимающий количество вершин
+		if (V <= 0)
+			throw InvalidVertexException(V);
+		vertices = V;
+		adjList.resize(vertices, 0);
+	}
+
+	Vertex(const Vertex& ver)
+	{
+		// Конструктор копий
+		vertices = ver.vertices;
+		adjList.resize(vertices, 0);
+		for (int i = 0; i < vertices; i++)
+			adjList[i] = ver.adjList[i];
+	}
+
+	void addEdge(int pos, int value)
+	{
+		// Ручное исправление значения в списке смежности для вершины
+		if (pos >= vertices)
+		{
+			throw IndexOutOfBoundsException(vertices, pos);
+		}
+		adjList[pos] = value;
+	}
+
+	int getVertices() { return vertices; }
+
+	int& operator[](int pos)
+	{
+		// Переопределение оператора []
+		if (pos >= vertices)
+			throw IndexOutOfBoundsException(vertices, pos);
+		return adjList[pos];
+	}
+
+	void printVertex()
+	{
+		// Вывод списка смежности вершины в консоль
+		for (int i = 0; i < vertices; i++)
+			cout << adjList[i] << " ";
+		cout << endl;
+	}
+};
+
+
+class Graph						// Класс графа, в котором реализованы вспомогательные функции
+{
+protected:
+	vector<Vertex> adjMatrix;	// Матрица смежности (массив из вершин)
+	int vertices = 0;			// кол-во вершин
+
+	void initialize(vector<Vertex>& matrix, int Vertices)
+	{
+		vertices = Vertices;
+		matrix.resize(vertices, Vertex(vertices));
+	}
+
+public:
+	Graph()
+	{
+		// Базовый конструктор
+		initialize(adjMatrix, DEFAULT_VERTICES);
+	}
+
+	Graph(int V)
+	{
+		// Конструктор, принимающий количество вершин
+		if (V <= 0)
+			throw InvalidVertexException(V);
+		initialize(adjMatrix, V);
+	}
+
+	Vertex& operator[](int index)
+	{
+		if (index >= vertices)
+			throw IndexOutOfBoundsException(vertices, index);
+		return adjMatrix[index];
+	}
+
+
+	friend ostream& operator<<(ostream& stream, Graph& G)
+	{
+		stream << G.vertices << endl;
+		for (int i = 0; i < G.vertices; i++)
+		{
+			G[i].printVertex();
+		}
+
+		return stream;
+	}
+
+	friend istream& operator>>(istream& stream, Graph& G)
+	{
+		if (typeid(stream) == typeid(ifstream))
+		{
+			int vertex;
+			stream >> vertex;
+
+			if (vertex != G.vertices)
+			{
+				G.vertices = vertex;
+				G.adjMatrix.resize(vertex, Vertex());
+			}
+		}
+		for (int i = 0; i < G.vertices; i++)
+			for (int j = 0; j < G.vertices; j++)
+				stream >> G.adjMatrix[i][j];
+
+		return stream;
+	}
+};
+
+
+
+class FlowGraph : public Graph		// Класс графа, предназначенного для поиска максимального потока
+{
+protected:
+	bool bfs(vector<Vertex>& rGraph, int source, int target, vector<int>& parent)
 	{
 		// BFS - поиск возможного минимального пути в сети
-		vector<bool> visited(vertex, false);
+		vector<bool> visited(vertices, false);
 		queue<int> q;
 
 		q.push(source);
@@ -31,7 +207,7 @@ protected:
 			int u = q.front();
 			q.pop();
 
-			for (int v = 0; v < vertex; v++)
+			for (int v = 0; v < vertices; v++)
 			{
 				if (!visited[v] && rGraph[u][v] > 0)
 				{
@@ -50,10 +226,10 @@ protected:
 		return false;
 	}
 
-	bool dfs(vector<vector<int> >& rGraph, int source, int target, vector<int>& parent)
+	bool dfs(vector<Vertex>& rGraph, int source, int target, vector<int>& parent)
 	{
 		// DFS; вместо очереди используется стек
-		vector<bool> visited(vertex, false);
+		vector<bool> visited(vertices, false);
 
 		stack<int> S;
 
@@ -66,7 +242,7 @@ protected:
 			int u = S.top();
 			S.pop();
 
-			for (int v = 0; v < vertex; v++)
+			for (int v = 0; v < vertices; v++)
 			{
 				if (!visited[v] && rGraph[u][v] > 0)
 				{
@@ -80,12 +256,12 @@ protected:
 		return res;
 	}
 
-	bool bfsForDinic(vector<vector<int> >& rGraph, int source, int target, vector<int>& level)
+	bool bfsForDinic(vector<Vertex>& rGraph, int source, int target, vector<int>& level)
 	{
 		// BFS + создание слоистой вспомогательной сети
 		queue<int> q;
 		q.push(source);
-		level.assign(vertex, -1);
+		level.assign(vertices, -1);
 		level[source] = 0;
 
 		while (!q.empty())
@@ -93,7 +269,7 @@ protected:
 			int u = q.front();
 			q.pop();
 
-			for (int v = 0; v < vertex; v++)
+			for (int v = 0; v < vertices; v++)
 			{
 				if (level[v] < 0 && rGraph[u][v] > 0)
 				{
@@ -105,11 +281,11 @@ protected:
 		return level[target] >= 0;
 	}
 
-	int dfsForDinic(vector<vector<int> >& rGraph, int u, int target, int flow, vector<int>& level, vector<int>& start)
+	int dfsForDinic(vector<Vertex>& rGraph, int u, int target, int flow, vector<int>& level, vector<int>& start)
 	{
 		if (u == target) return flow;
 
-		for (int& v = start[u]; v < vertex; v++)
+		for (int& v = start[u]; v < vertices; v++)
 		{
 			if (rGraph[u][v] > 0 && level[v] == level[u] + 1)
 			{
@@ -124,49 +300,15 @@ protected:
 		return 0;
 	}
 
-
-public:
-	Graph()
-	{
-		// Базовый конструктор
-		vertex = 5;
-
-		adjMatrix.resize(vertex, vector<int>(vertex, 0));
-	}
-
-	Graph(int V)
-	{
-		// Конструктор, принимающий количество вершин
-		vertex = V;
-
-		adjMatrix.resize(vertex, vector<int>(vertex, 0));
-	}
-
-	Graph(const Graph& G)
-	{
-		// Конструктор копий
-		vertex = G.vertex;
-
-		adjMatrix.resize(vertex, vector<int>(vertex, 0));
-		for (int u = 0; u < vertex; u++)
-			for (int v = 0; v < vertex; v++)
-				adjMatrix[u][v] = G.adjMatrix[u][v];
-	}
-
-	void addEdge(int a, int b, int weight)
-	{
-		adjMatrix[a][b] = weight;
-	}
-
 	int fordFulkerson(int source, int target)
 	{
 		// Алгоритм Форда-Фалкерсона
-		vector<vector<int> > rGraph(vertex, vector<int>(vertex, 0));
-		for (int u = 0; u < vertex; u++)
-			for (int v = 0; v < vertex; v++)
+		vector<Vertex> rGraph(vertices, Vertex(vertices));
+		for (int u = 0; u < vertices; u++)
+			for (int v = 0; v < vertices; v++)
 				rGraph[u][v] = adjMatrix[u][v];
 
-		vector<int> parent(vertex, 0);
+		vector<int> parent(vertices, 0);
 
 		int maxFlow = 0;
 
@@ -195,12 +337,12 @@ public:
 	int edmondsKarp(int source, int target)
 	{
 		// Алгоритм Эдмондса-Карпа
-		vector<vector<int> > rGraph(vertex, vector<int>(vertex, 0));
-		for (int u = 0; u < vertex; u++)
-			for (int v = 0; v < vertex; v++)
+		vector<Vertex> rGraph(vertices, Vertex(vertices));
+		for (int u = 0; u < vertices; u++)
+			for (int v = 0; v < vertices; v++)
 				rGraph[u][v] = adjMatrix[u][v];
 
-		vector<int> parent(vertex, 0);
+		vector<int> parent(vertices, 0);
 		int maxFlow = 0;
 
 		while (bfs(rGraph, source, target, parent))
@@ -228,17 +370,17 @@ public:
 	int dinic(int source, int target)
 	{
 		// Алгоритм Диница
-		vector<vector<int> > rGraph(vertex, vector<int>(vertex, 0));
-		for (int u = 0; u < vertex; u++)
-			for (int v = 0; v < vertex; v++)
+		vector<Vertex> rGraph(vertices, Vertex(vertices));
+		for (int u = 0; u < vertices; u++)
+			for (int v = 0; v < vertices; v++)
 				rGraph[u][v] = adjMatrix[u][v];
 
 		int maxFlow = 0;
-		vector<int> level(vertex, -1);
+		vector<int> level(vertices, -1);
 
 		while (bfsForDinic(rGraph, source, target, level))
 		{
-			vector<int> start(vertex, 0);
+			vector<int> start(vertices, 0);
 
 			while (int flow = dfsForDinic(rGraph, source, target, INT_MAX, level, start))
 				maxFlow += flow;
@@ -246,145 +388,142 @@ public:
 
 		return maxFlow;
 	}
-	
-	friend ostream& operator<<(ostream& stream, Graph& G);
-	friend istream& operator>>(istream& stream, Graph& G);
-};
+public:
+	FlowGraph() : Graph() {}
+	FlowGraph(int V) : Graph(V) {}
 
-ostream& operator<<(ostream& stream, Graph& G)
-{
-	stream << G.vertex << endl;
-	for (int i = 0; i < G.vertex; i++)
+	int findMaxFlow(int source, int target, int algo)
 	{
-		for (int j = 0; j < G.vertex; j++)
-			stream << G.adjMatrix[i][j] << " ";
-		stream << endl;
-	}
-	
-	return stream;
-}
-
-istream& operator>>(istream& stream, Graph& G)
-{
-	if (typeid(stream) == typeid(ifstream))
-	{
-		int vertex;
-		stream >> vertex;
-
-		if (vertex != G.vertex)
+		if (algo == 1)
 		{
-			G.vertex = vertex;
-			G.adjMatrix.resize(vertex, vector<int>(vertex, 0));
+			return fordFulkerson(source, target);
+		}
+		else if (algo == 2)
+		{
+			return edmondsKarp(source, target);
+		}
+		else if (algo == 3)
+		{
+			return dinic(source, target);
+		}
+		else
+		{
+			throw InvalidAlgorithmException(algo);
 		}
 	}
-	for (int i = 0; i < G.vertex; i++)
-		for (int j = 0; j < G.vertex; j++)
-			stream >> G.adjMatrix[i][j];
-	
-	return stream;
-}
+};
 
 
 
 int main()
 {
-	/*
-	Graph G(10);
-	ifstream fin; fin.open("test0.txt");
-	if (fin)
+	try
 	{
-		fin >> G;
-		fin.close();
-	}
-	*/
+		/*
+		Graph G(10);
+		ifstream fin; fin.open("test0.txt");
+		if (fin)
+		{
+			fin >> G;
+			fin.close();
+		}
+		*/
 
-	/*
-	Graph G(4);
-	ifstream fin; fin.open("test1.txt");
-	if (fin)
-	{
-		fin >> G;
-		fin.close();
-	}
-	*/
+		/*
+		Graph G(4);
+		ifstream fin; fin.open("test1.txt");
+		if (fin)
+		{
+			fin >> G;
+			fin.close();
+		}
+		*/
 
-	/*
-	Graph G(6);
-	ifstream fin; fin.open("test2.txt");
-	if (fin)
-	{
-		fin >> G;
-		fin.close();
-	}
-	*/
+		/*
+		Graph G(6);
+		ifstream fin; fin.open("test2.txt");
+		if (fin)
+		{
+			fin >> G;
+			fin.close();
+		}
+		*/
 
-	Graph G(11);
-	ifstream fin; fin.open("testx.txt");
-	if (fin)
-	{
-		fin >> G;
-		fin.close();
-	}
+		FlowGraph G(11);
+		ifstream fin; fin.open("testx.txt");
+		if (fin)
+		{
+			fin >> G;
+			fin.close();
+		}
 
-	cout << G << endl;
+		cout << G << endl;
 
-	long int timer_1, timer_2;
-	long int ff_total = 0, ek_total = 0, d_total = 0;
-	int i;
-	
-	// Важно указать исток и сток
-	int source = 0;
-	int target = 10;
 
-	// Измерение алгоритма Форда-Фалкерсона
-	int ff_flow;
-	timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	ff_flow = G.fordFulkerson(source, target);
-	timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	ff_total += (timer_2 - timer_1);
-	for (i = 0; i < 9; i++)
-	{
+
+		long int timer_1, timer_2;
+		long int ff_total = 0, ek_total = 0, d_total = 0;
+		int i;
+
+		//Важно указать исток и сток
+		int source = 0;
+		int target = 10;
+
+		//Измерение алгоритма Форда-Фалкерсона
+		int ff_flow;
 		timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-		G.fordFulkerson(source, target);
+		ff_flow = G.findMaxFlow(source, target, 1);
 		timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
 		ff_total += (timer_2 - timer_1);
-	}
-	cout << "[Ford-Fulkerson algorithm]\tFlow: " << ff_flow << endl;
-	cout << "[Ford-Fulkerson algorithm]\tTotal time: " << ff_total << " ns" << endl;
+		for (i = 0; i < 9; i++)
+		{
+			timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
+			G.findMaxFlow(source, target, 1);
+			timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
+			ff_total += (timer_2 - timer_1);
+		}
+		cout << "[Ford-Fulkerson algorithm]\tFlow: " << ff_flow << endl;
+		cout << "[Ford-Fulkerson algorithm]\tTotal time: " << ff_total << " ns" << endl;
 
 
-	// Измерение алгоритма Эдмондса-Карпа
-	int ek_flow;
-	timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	ek_flow = G.edmondsKarp(source, target);
-	timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	ek_total += (timer_2 - timer_1);
-	for (i = 0; i < 9; i++)
-	{
+		//Измерение алгоритма Эдмондса-Карпа
+		int ek_flow;
 		timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-		G.edmondsKarp(source, target);
+		ek_flow = G.findMaxFlow(source, target, 2);
 		timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
 		ek_total += (timer_2 - timer_1);
-	}
-	cout << "[Edmonds-Karp algorithm]\tFlow: " << ek_flow << endl;
-	cout << "[Edmonds-Karp algorithm]\tTotal time: " << ek_total << " ns" << endl;
+		for (i = 0; i < 9; i++)
+		{
+			timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
+			G.findMaxFlow(source, target, 2);
+			timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
+			ek_total += (timer_2 - timer_1);
+		}
+		cout << "[Edmonds-Karp algorithm]\tFlow: " << ek_flow << endl;
+		cout << "[Edmonds-Karp algorithm]\tTotal time: " << ek_total << " ns" << endl;
 
 
-	// Измерение алгоритма Диница
-	int d_flow;
-	timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	d_flow = G.dinic(source, target);
-	timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	d_total += (timer_2 - timer_1);
-	for (i = 0; i < 9; i++)
-	{
+		//Измерение алгоритма Диница
+		int d_flow;
 		timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
-		G.dinic(source, target);
+		d_flow = G.findMaxFlow(source, target, 3);
 		timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
 		d_total += (timer_2 - timer_1);
+		for (i = 0; i < 9; i++)
+		{
+			timer_1 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
+			G.findMaxFlow(source, target, 3);
+			timer_2 = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count();
+			d_total += (timer_2 - timer_1);
+		}
+		cout << "[Dinic algorithm]\t\tFlow: " << d_flow << endl;
+		cout << "[Dinic algorithm]\t\tTotal time: " << d_total << " ns" << endl;
+
 	}
-	cout << "[Dinic algorithm]\t\tFlow: " << d_flow << endl;
-	cout << "[Dinic algorithm]\t\tTotal time: " << d_total << " ns" << endl;
+	catch (InvalidVertexException e) { e.print(); }
+	catch (IndexOutOfBoundsException e) { e.print(); }
+	catch (InvalidAlgorithmException e) { e.print(); }
+	catch (...) { cout << "Something went wrong..." << endl; }
 
 	return 0;
 }
