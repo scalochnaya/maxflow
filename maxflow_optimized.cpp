@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <chrono>
 #include <vector>
@@ -10,7 +10,7 @@ using namespace std;
 #define DEFAULT_VERTICES 10
 
 #define SOURCE 0
-#define TARGET 11
+#define TARGET 10
 
 
 class InvalidVertexException : public exception	// Исключение: Неверное кол-во вершин
@@ -638,7 +638,8 @@ protected:
 			*it1++ = *it2++;
 
 		int* parent = new int[vertices];
-		int* b = &parent[0]; int* e = &parent[vertices - 1];
+		int* b = &parent[0];
+		int* e = &parent[vertices - 1];
 		while (b - e <= 0)
 		{
 			*b++ = 0;
@@ -706,6 +707,8 @@ public:
 
 	int findMaxFlow(int source, int target, int algo)
 	{
+		if (target > vertices) throw InvalidVertexException(target);
+
 		switch (algo)
 		{
 		case 1:
@@ -726,43 +729,37 @@ int main()
 {
 	try
 	{
-		
-		FlowGraph G(12);
-		ifstream fin; fin.open("test.txt");
+		/*FlowGraph G(4);
+		ifstream fin; fin.open("test0.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
-		}
-		
+		}*/
 
-		
-		/*FlowGraph G(4);
+		/*FlowGraph G(10);
 		ifstream fin; fin.open("test1.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
 		}*/
-		
 
-		
-		/*FlowGraph G(6);
+		/*FlowGraph G(12);
 		ifstream fin; fin.open("test2.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
 		}*/
-		
 
-		/*FlowGraph G(11);
+		FlowGraph G(11);
 		ifstream fin; fin.open("testx.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
-		}*/
+		}
 
 		cout << G << endl;
 
