@@ -412,6 +412,7 @@ public:
 	{
 		// Функция, которая передает управление тому или иному алгоритму
 		// в зависимости от параметра algo
+		if (target > vertices) throw InvalidVertexException(target);
 
 		if (algo == 1)
 		{
@@ -438,28 +439,23 @@ int main()
 {
 	try
 	{
-		/*
-		FlowGraph G(10);
+		/*FlowGraph G(4);
 		ifstream fin; fin.open("test0.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
-		}
-		*/
+		}*/
 
-		/*
-		FlowGraph G(4);
+		/*FlowGraph G(10);
 		ifstream fin; fin.open("test1.txt");
 		if (fin)
 		{
 			fin >> G;
 			fin.close();
-		}
-		*/
-
+		}*/
 		
-		/*FlowGraph G(6);
+		/*FlowGraph G(12);
 		ifstream fin; fin.open("test2.txt");
 		if (fin)
 		{
@@ -467,7 +463,6 @@ int main()
 			fin.close();
 		}*/
 		
-
 		FlowGraph G(11);
 		ifstream fin; fin.open("testx.txt");
 		if (fin)
